@@ -1,0 +1,40 @@
+{
+  "name": "safe-fs-walk",
+  "version": "2.1.1",
+  "description": "Another file system walker for node forked from with safety in mind. This walker will not stop on system errors.",
+  "main": "./src/index.js",
+  "scripts": {
+    "lint": "standard && standard-markdown",
+    "test": "npm run lint && npm run unit",
+    "unit": "tape tests/**/*.js | tap-spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dawizz/safe-fs-walk.git"
+  },
+  "keywords": [
+    "walk",
+    "walker",
+    "fs",
+    "fs-extra",
+    "readable",
+    "streams"
+  ],
+  "author": "Alban Mouton",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dawizz/safe-fs-walk/issues"
+  },
+  "homepage": "https://github.com/dawizz/safe-fs-walk#readme",
+  "dependencies": {
+    "graceful-fs": "^4.1.9"
+  },
+  "devDependencies": {
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.4.3",
+    "standard": "^10.0.2",
+    "standard-markdown": "^4.0.1",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.2.2"
+  }
+}
