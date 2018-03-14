@@ -9,6 +9,9 @@ test('walk directory, if non readable file ignore it', function (t, testDir) {
   fs.writeFileSync(unreadableFile, 'test')
   fs.chmodSync(unreadableFile, '0222')
 
+  // not able to simulate on windows
+  if (process.platform === 'win32') return t.end()
+
   t.plan(1)
   klaw(testDir)
     .on('data', function (item) {

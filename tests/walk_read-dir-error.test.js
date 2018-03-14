@@ -10,6 +10,9 @@ test('walk directory, if error on readdir ignore it', function (t, testDir) {
   mkdirp.sync(unreadableDir)
   fs.chmodSync(unreadableDir, '0222')
 
+  // not able to simulate on windows
+  if (process.platform === 'win32') return t.end()
+
   t.plan(1)
   var items = []
   klaw(testDir)
