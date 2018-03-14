@@ -2,7 +2,7 @@
 
 Another file system walker for node forked from [node-klaw](https://github.com/jprichardson/node-klaw) with safety in mind. This walker will not stop on system errors.
 
-[![npm Package](https://img.shields.io/npm/v/safe-fs-klaw.svg?style=flat-square)](https://www.npmjs.org/package/safe-fs-walk)
+[![npm Package](https://img.shields.io/npm/v/safe-fs-walk.svg?style=flat-square)](https://www.npmjs.org/package/safe-fs-walk)
 [![build status](https://api.travis-ci.org/dawizz/safe-fs-walk.svg)](http://travis-ci.org/dawizz/safe-fs-walk)
 [![windows build status](https://ci.appveyor.com/api/projects/status/github/dawizz/safe-fs-walk?branch=master&svg=true)](https://ci.appveyor.com/project/dawizz/safe-fs-walk/branch/master)
 
