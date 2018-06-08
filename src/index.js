@@ -3,17 +3,22 @@ var path = require('path')
 var Readable = require('stream').Readable
 var util = require('util')
 
-function Walker (dir, options) {
-  assert.strictEqual(typeof dir, 'string', '`dir` parameter should be of type string. Got type: ' + typeof dir)
+function Walker (dirs, options) {
+  if (typeof dirs === 'string') dirs = [dirs]
+  assert.ok(Array.isArray(dirs), 'First parameter should be a string of an array.')
+  dirs.forEach(function (dir) {
+    assert.strictEqual(typeof dir, 'string', 'Item in the array should be of type string. Got type: ' + typeof dir)
+  })
   var defaultStreamOptions = { objectMode: true }
   var defaultOpts = { queueMethod: 'shift', pathSorter: undefined, filter: undefined, depthLimit: undefined }
   options = Object.assign(defaultOpts, options, defaultStreamOptions)
 
   Readable.call(this, options)
-  this.root = path.resolve(dir)
-  this.paths = [this.root]
+  this.roots = dirs.map(function (dir) {
+    return path.resolve(dir)
+  })
+  this.paths = []
   this.options = options
-  if (options.depthLimit > -1) this.rootDepth = this.root.split(path.sep).length + 1
   this.fs = options.fs || require('graceful-fs')
   this.log = options.log === undefined ? console.error : options.log
   this.onlyReadable = options.onlyReadable === undefined ? true : options.onlyReadable
@@ -25,6 +30,12 @@ Walker.prototype._read = function () {
 }
 
 Walker.prototype.iterate = function () {
+  if (this.paths.length === 0 && this.roots.length > 0) {
+    this.root = this.roots.shift()
+    this.paths.push(this.root)
+    if (this.options.depthLimit > -1) this.rootDepth = this.root.split(path.sep).length + 1
+  }
+
   if (this.paths.length === 0) return this.push(null)
   var self = this
   var pathItem = this.paths[this.options.queueMethod]()
