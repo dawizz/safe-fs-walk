@@ -10,7 +10,7 @@ function Walker (dirs, options) {
     assert.strictEqual(typeof dir, 'string', 'Item in the array should be of type string. Got type: ' + typeof dir)
   })
   var defaultStreamOptions = { objectMode: true }
-  var defaultOpts = { queueMethod: 'shift', pathSorter: undefined, filter: undefined, depthLimit: undefined }
+  var defaultOpts = { queueMethod: 'pop', pathSorter: undefined, filter: undefined, depthLimit: undefined }
   options = Object.assign(defaultOpts, options, defaultStreamOptions)
 
   Readable.call(this, options)
@@ -54,7 +54,7 @@ Walker.prototype.iterate = function () {
         self.fs.access(pathItem, self.fs.constants.R_OK, function (err) {
           if (err) {
             if (self.log) {
-              self.log('safe-fs-walk - File is not readable ' + item, err)
+              self.log('safe-fs-walk - File is not readable ' + pathItem, err)
             }
             return self.iterate()
           }
@@ -73,7 +73,6 @@ Walker.prototype.iterate = function () {
 
     self.fs.readdir(pathItem, function (err, pathItems) {
       if (err) {
-        self.push(item)
         if (self.log) {
           self.log('safe-fs-walk - Failed to perform readdir on directory ' + pathItem, err)
         }
