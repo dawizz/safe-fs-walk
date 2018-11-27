@@ -1,6 +1,6 @@
 {
   "name": "safe-fs-walk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Another file system walker for node forked from with safety in mind. This walker will not stop on system errors.",
   "main": "./src/index.js",
   "scripts": {
