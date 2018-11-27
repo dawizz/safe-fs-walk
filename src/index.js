@@ -10,7 +10,7 @@ function Walker (dirs, options) {
     assert.strictEqual(typeof dir, 'string', 'Item in the array should be of type string. Got type: ' + typeof dir)
   })
   var defaultStreamOptions = { objectMode: true }
-  var defaultOpts = { queueMethod: 'pop', pathSorter: undefined, filter: undefined, depthLimit: undefined }
+  var defaultOpts = { queueMethod: 'pop', filter: undefined, depthLimit: undefined }
   options = Object.assign(defaultOpts, options, defaultStreamOptions)
 
   Readable.call(this, options)
@@ -19,75 +19,88 @@ function Walker (dirs, options) {
   })
   this.paths = []
   this.options = options
-  this.fs = options.fs || require('graceful-fs')
+  const fs = this.fs = options.fs || require('graceful-fs')
+  this.lstat = util.promisify(fs.lstat)
+  this.access = util.promisify(fs.access)
+  this.readdir = util.promisify(fs.readdir)
+
   this.log = options.log === undefined ? console.error : options.log
   this.onlyReadable = options.onlyReadable === undefined ? true : options.onlyReadable
 }
 util.inherits(Walker, Readable)
 
-Walker.prototype._read = function () {
-  this.iterate()
+Walker.prototype._read = async function () {
+  let iterationOk = false
+  // If iterate return an item we push it and _read will be called again
+  // if it returns null we will stop
+  // if it fails on current item we keep iterating
+  while (!iterationOk) {
+    try {
+      this.push(await this.iterate())
+      iterationOk = true
+    } catch (err) {
+      // error is arlready logged
+    }
+  }
 }
 
-Walker.prototype.iterate = function () {
+Walker.prototype.iterate = async function () {
   if (this.paths.length === 0 && this.roots.length > 0) {
     this.root = this.roots.shift()
     this.paths.push(this.root)
     if (this.options.depthLimit > -1) this.rootDepth = this.root.split(path.sep).length + 1
   }
 
-  if (this.paths.length === 0) return this.push(null)
-  var self = this
-  var pathItem = this.paths[this.options.queueMethod]()
+  if (this.paths.length === 0) return null
+  const pathItem = this.paths[this.options.queueMethod]()
 
-  self.fs.lstat(pathItem, function (err, stats) {
-    var item = { path: pathItem, stats: stats }
-    if (err) {
-      if (self.log) {
-        self.log('safe-fs-walk - Failed to perform lstat on directory ' + pathItem, err)
-      }
-      return self.iterate()
+  let stats
+  try {
+    stats = await this.lstat(pathItem)
+  } catch (err) {
+    if (this.log) {
+      this.log('safe-fs-walk - Failed to perform lstat on directory ' + pathItem, err)
     }
-
-    if (!stats.isDirectory()) {
-      if (self.onlyReadable) {
-        self.fs.access(pathItem, self.fs.constants.R_OK, function (err) {
-          if (err) {
-            if (self.log) {
-              self.log('safe-fs-walk - File is not readable ' + pathItem, err)
-            }
-            return self.iterate()
-          }
-          self.push(item)
-        })
-      } else {
-        self.push(item)
-      }
-      return
+    throw err
+  }
+  var item = { path: pathItem, stats: stats }
+  if (!stats.isDirectory()) {
+    if (!this.onlyReadable) {
+      return item
     }
-
-    if ((self.rootDepth &&
-      pathItem.split(path.sep).length - self.rootDepth >= self.options.depthLimit)) {
-      return self.push(item)
-    }
-
-    self.fs.readdir(pathItem, function (err, pathItems) {
-      if (err) {
-        if (self.log) {
-          self.log('safe-fs-walk - Failed to perform readdir on directory ' + pathItem, err)
-        }
-        return self.iterate()
+    try {
+      await this.access(pathItem, this.fs.constants.R_OK)
+    } catch (err) {
+      if (this.log) {
+        this.log('safe-fs-walk - File is not readable ' + pathItem, err)
       }
+      throw err
+    }
+    return item
+  }
 
-      pathItems = pathItems.map(function (part) { return path.join(pathItem, part) })
-      if (self.options.filter) pathItems = pathItems.filter(self.options.filter)
-      if (self.options.pathSorter) pathItems.sort(self.options.pathSorter)
-      // faster way to do do incremental batch array pushes
-      self.paths.push.apply(self.paths, pathItems)
+  // If we attained max depth we do not recurse in the folder
+  if ((this.rootDepth &&
+    pathItem.split(path.sep).length - this.rootDepth >= this.options.depthLimit)) {
+    return item
+  }
 
-      self.push(item)
-    })
-  })
+  // List directory children
+  let pathItems
+  try {
+    pathItems = await this.readdir(pathItem)
+  } catch (err) {
+    if (this.log) {
+      this.log('safe-fs-walk - Failed to perform readdir on directory ' + pathItem, err)
+    }
+    throw err
+  }
+
+  pathItems = pathItems.map((part) => path.join(pathItem, part))
+  if (this.options.filter) pathItems = pathItems.filter(this.options.filter)
+  // faster way to do do incremental batch array pushes
+  this.paths.push.apply(this.paths, pathItems)
+  return item
 }
 
 function walk (root, options) {
