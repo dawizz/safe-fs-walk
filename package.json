@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "standard && standard-markdown",
     "test": "npm run lint && npm run unit",
-    "unit": "tape tests/**/*.js | tap-spec"
+    "unit": "tape tests/**/*.js"
   },
   "repository": {
     "type": "git",
@@ -27,14 +27,13 @@
   },
   "homepage": "https://github.com/dawizz/safe-fs-walk#readme",
   "dependencies": {
-    "graceful-fs": "^4.1.9"
+    "graceful-fs": "^4.2.0"
   },
   "devDependencies": {
     "mkdirp": "^0.5.1",
-    "rimraf": "^2.4.3",
-    "standard": "^10.0.2",
-    "standard-markdown": "^4.0.1",
-    "tap-spec": "^5.0.0",
-    "tape": "^4.2.2"
+    "rimraf": "^2.6.3",
+    "standard": "^13.1.0",
+    "standard-markdown": "^5.1.0",
+    "tape": "^4.11.0"
   }
 }
